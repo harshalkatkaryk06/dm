@@ -1,0 +1,319 @@
+2.
+import seaborn as sns
+import pandas as pd
+
+# Load Titanic dataset
+titanic = sns.load_dataset('titanic')
+
+# Display first few rows
+print("First 5 rows of the dataset:")
+print(titanic.head())
+===================================================================
+3.
+import pandas as pd
+import seaborn as sns
+
+# Load Titanic dataset
+df = sns.load_dataset('titanic').dropna(subset=['fare'])  # Remove missing fares
+
+# Display first few rows
+print(df.head())
+
+# Filter passengers where Fare > 50
+filtered = df[df['fare'] > 50]
+print(filtered[['survived', 'pclass', 'sex', 'age', 'fare', 'embark_town']])
+
+# Total & average fare by class
+print(df.groupby('pclass')['fare'].agg(['sum', 'mean']))
+
+# Total fare & count by embark town
+print(df.groupby('embark_town')['fare'].agg(['sum', 'count']))
+==================================================================================4.
+import pandas as pd
+import seaborn as sns
+
+# Load Titanic dataset
+df = sns.load_dataset('titanic')
+
+# Convert 'age' to a date-like format for demonstration (assuming age as years since birth)
+df['birth_year'] = 1912 - df['age'].fillna(df['age'].median())  # Titanic sank in 1912
+df['birth_year'] = df['birth_year'].astype(int)
+df['Year'] = pd.to_datetime(df['birth_year'], format='%Y').dt.to_period('Y')
+
+# Group by Year and count passengers
+yearly_counts = df.groupby('Year')['survived'].count()
+
+# Print result
+print(yearly_counts)
+=========================================================================
+5.
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+
+# Generate sample data
+X, y = make_blobs(n_samples=300, centers=4, cluster_std=0.6, random_state=42)
+
+# Plot raw data
+plt.scatter(X[:, 0], X[:, 1], s=50, c='gray', marker='o')
+plt.title("Raw Data")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.show()
+
+# Apply K-means clustering
+kmeans = KMeans(n_clusters=4, random_state=42, n_init=10)
+kmeans.fit(X)
+
+# Get cluster labels and centroids
+labels = kmeans.labels_
+centroids = kmeans.cluster_centers_
+
+# Plot clustered data
+plt.scatter(X[:, 0], X[:, 1], c=labels, cmap='viridis', s=50)
+plt.scatter(centroids[:, 0], centroids[:, 1], s=200, c='red', marker='X', label='Centroids')
+plt.title("K-means Clustering")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.legend()
+plt.show()
+==================================================================================
+6.
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import load_iris
+from sklearn.metrics import accuracy_score, classification_report
+
+# Load dataset
+X, y = load_iris(return_X_y=True)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+# Train RandomForest model
+rf = RandomForestClassifier(n_estimators=100, random_state=42).fit(X_train, y_train)
+
+# Predictions
+y_pred = rf.predict(X_test)
+
+# Metrics
+print(f"Accuracy: {accuracy_score(y_test, y_pred) * 100:.2f}%")
+print("Classification Report:\n", classification_report(y_test, y_pred))
+print("Feature Importances:", dict(zip(load_iris().feature_names, rf.feature_importances_)))
+============================================================================
+7.
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# Data
+df = pd.DataFrame({'YearsExperience': range(1, 11), 'Salary': np.arange(40000, 60000, 2000)})
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(df[['YearsExperience']], df['Salary'], test_size=0.2, random_state=42)
+
+# Train model
+model = LinearRegression().fit(X_train, y_train)
+
+# Predictions
+y_pred = model.predict(X_test)
+
+# Metrics
+print(f"MSE: {mean_squared_error(y_test, y_pred):.2f}")
+print(f"R² Score: {r2_score(y_test, y_pred):.2f}")
+
+# Plot results
+plt.scatter(X_test, y_test, color='blue', label='Actual')
+plt.plot(X_test, y_pred, color='red', label='Predicted')
+plt.xlabel('Years of Experience')
+plt.ylabel('Salary')
+plt.title('Linear Regression: Salary vs Experience')
+plt.legend()
+plt.show()
+
+# Prediction for new data
+print(f"Predicted Salary (11 years): ${model.predict([[11]])[0]:,.2f}")
+========================================================================
+8.
+import pandas as pd
+from itertools import combinations
+
+# Transaction data
+df = pd.DataFrame({
+    'Milk': [1, 1, 0, 1, 1],
+    'Bread': [1, 1, 1, 1, 0],
+    'Butter': [0, 1, 1, 1, 1],
+    'Cheese': [1, 0, 1, 1, 1]
+})
+
+# Compute item frequencies (support)
+support_threshold = 0.6
+total_transactions = len(df)
+
+# Find frequent individual items
+frequent_items = {}
+for item in df.columns:
+    support = df[item].sum() / total_transactions
+    if support >= support_threshold:
+        frequent_items[frozenset([item])] = support
+
+# Find frequent item pairs
+frequent_pairs = {}
+for item1, item2 in combinations(df.columns, 2):
+    support = (df[item1] & df[item2]).sum() / total_transactions
+    if support >= support_threshold:
+        frequent_pairs[frozenset([item1, item2])] = support
+
+# Generate association rules (confidence metric)
+confidence_threshold = 0.7
+rules = []
+for itemset, support in frequent_pairs.items():
+    item1, item2 = list(itemset)
+    confidence_1 = support / frequent_items[frozenset([item1])]
+    confidence_2 = support / frequent_items[frozenset([item2])]
+    
+    if confidence_1 >= confidence_threshold:
+        rules.append((item1, item2, confidence_1))
+    if confidence_2 >= confidence_threshold:
+        rules.append((item2, item1, confidence_2))
+
+# Display results
+print("Frequent Itemsets:")
+for itemset, support in {**frequent_items, **frequent_pairs}.items():
+    print(f"{set(itemset)}: Support = {support:.2f}")
+
+print("\nAssociation Rules:")
+for antecedent, consequent, confidence in rules:
+    print(f"{antecedent} → {consequent} (Confidence: {confidence:.2f})")
+=======================================================================
+9.
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_blobs
+from sklearn.cluster import KMeans, DBSCAN
+
+# Generate synthetic dataset
+X, _ = make_blobs(n_samples=300, centers=3, cluster_std=1.0, random_state=42)
+
+# K-Means Clustering
+kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
+kmeans_labels = kmeans.fit_predict(X)
+
+# DBSCAN Clustering
+dbscan = DBSCAN(eps=0.8, min_samples=5)
+dbscan_labels = dbscan.fit_predict(X)
+
+# Plot results
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+for ax, labels, title, centers in zip(
+    axes,
+    [kmeans_labels, dbscan_labels],
+    ["K-Means Clustering", "DBSCAN Clustering"],
+    [kmeans.cluster_centers_, None],
+):
+    ax.scatter(X[:, 0], X[:, 1], c=labels, cmap="viridis", edgecolor="k")
+    if centers is not None:
+        ax.scatter(centers[:, 0], centers[:, 1], c="red", marker="X", s=200, label="Centroids")
+        ax.legend()
+    ax.set_title(title)
+
+plt.show()
+=========================================================================
+10.
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Generate a random dataset
+np.random.seed(42)
+data = pd.DataFrame(np.random.rand(10, 5), columns=['A', 'B', 'C', 'D', 'E'])
+
+# Compute the correlation matrix
+corr_matrix = data.corr()
+
+# Create a heatmap
+plt.figure(figsize=(8, 6))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', linewidths=0.5, fmt=".2f")
+
+plt.title('Correlation Matrix Heatmap')
+plt.show()
+=======================================================================
+11.	
+import networkx as nx
+import matplotlib.pyplot as plt
+from collections import Counter
+
+# Generate a random Erdős-Rényi graph
+G = nx.erdos_renyi_graph(n=100, p=0.05)
+
+# Compute degree distribution
+degree_count = Counter(dict(G.degree()).values())
+degrees, counts = zip(*sorted(degree_count.items()))
+
+# Plot degree distribution
+plt.figure(figsize=(8, 6))
+plt.bar(degrees, counts, color='b', alpha=0.7, edgecolor='k')
+plt.xlabel('Degree (k)')
+plt.ylabel('Number of Nodes')
+plt.title('Degree Distribution of the Network')
+plt.grid(axis='y', linestyle='--', alpha=0.6)
+plt.show()
+
+# Plot log-log degree distribution
+plt.figure(figsize=(8, 6))
+plt.scatter(degrees, counts, color='r', alpha=0.7)
+plt.xscale('log')
+plt.yscale('log')
+plt.xlabel('Log(Degree)')
+plt.ylabel('Log(Count)')
+plt.title('Log-Log Degree Distribution')
+plt.grid(which='both', linestyle='--', alpha=0.6)
+plt.show()
+===============================================================
+12.
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.lines as mlines
+
+# Generate a random Erdős-Rényi graph
+G = nx.erdos_renyi_graph(n=100, p=0.1)
+
+# Compute degree statistics
+degree_sequence = np.array([G.degree(node) for node in G.nodes()])
+max_degree, min_degree = degree_sequence.max(), degree_sequence.min()
+median_degree = np.median(degree_sequence)
+q1, q3 = np.percentile(degree_sequence, [25, 75])
+
+print(f"Max Degree: {max_degree}, Min Degree: {min_degree}, Median: {median_degree}, Q1: {q1}, Q3: {q3}")
+
+# Define color categories
+bins = [min_degree, q1, median_degree, q3, max_degree]
+colors = ['blue', 'green', 'yellow', 'orange', 'purple', 'red']
+node_colors = [colors[np.digitize(deg, bins)] for deg in degree_sequence]
+
+# Draw graph
+plt.figure(figsize=(10, 8))
+pos = nx.spring_layout(G, seed=42)  # Fixed layout for consistency
+nx.draw(G, pos, with_labels=True, node_size=400, node_color=node_colors, font_size=8, edge_color='gray')
+
+# Create legend
+legend_labels = [
+    ("Max Degree", 'red', max_degree),
+    ("Min Degree", 'blue', min_degree),
+    ("Q1 (≤)", 'green', round(q1)),
+    ("Median (≤)", 'yellow', round(median_degree)),
+    ("Q3 (≤)", 'orange', round(q3)),
+    ("Above Q3", 'purple', "")
+]
+
+handles = [mlines.Line2D([], [], color=c, marker='o', markersize=10, label=f"{label} {value}") 
+           for label, c, value in legend_labels]
+
+plt.legend(handles=handles, loc="upper left", fontsize=9)
+plt.title("Network Visualization with Degree-Based Coloring")
+plt.show()
+
